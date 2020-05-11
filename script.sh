@@ -117,6 +117,7 @@ cat <<EOF
 
 EOF
 
+printf "press enter to continue"
 read
 
 check_raspberrypi
@@ -131,7 +132,7 @@ if [[ $blkbrd == "y" ]]; then
   disable_underscan
 fi
 
-printf "do you want to install latest updates (it might take 10+ mins) [y/N]:"
+printf "do you want to update packages [y/N]:"
 read upgr
 if [[ $upgr == "y" ]]; then
   log "updating os packages"
@@ -139,13 +140,13 @@ if [[ $upgr == "y" ]]; then
 fi
 
 log "installing latest chromium browser and tools"
-install_essential_tools > /dev/null
+install_essential_tools
 
 log "installing mscore fonts"
-install_mscore_fonts > /dev/null
+install_mscore_fonts
 
 log "installing noto cjk fonts"
-install_notocjk_fonts > /dev/null
+install_notocjk_fonts
 
 log "setting up signal kiosk mode"
 install_kiosk_script
