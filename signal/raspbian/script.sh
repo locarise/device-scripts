@@ -77,6 +77,7 @@ chromium-browser \
 --disable-extensions \
 --start-fullscreen \
 --no-default-browser-check \
+--disable-component-update \
 https://signal.locarise.com
 EOF
 
