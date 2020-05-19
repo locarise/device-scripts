@@ -23,3 +23,5 @@
 - Run the setup script as a sudoer user
     - `chmod +x script.sh`
     - `./script.sh`
+- The script will ask you a reverse tunnel port; it has to be unique between all devices
+deployed with this script. Refer to values in AssetDefinitions of the Spaces API.
