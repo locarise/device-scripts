@@ -33,6 +33,10 @@ install_notocjk_fonts() {
   sudo apt install -y fonts-noto-cjk
 }
 
+install_ssh() {
+  sudo apt install -y ssh autossh
+}
+
 check_raspberrypi() {
   if ! `lsb_release -a | grep -q "Raspbian"`; then
     log "this device appears not to be running raspbian os" 1
@@ -100,6 +104,75 @@ EOF
   fi
 }
 
+setup_local_ssh() {
+    LOCAL_SSH_SERVER_CONFIG_FILE=/etc/ssh/sshd_config
+
+echo "# Binding
+Port 2222
+ListenAddress 127.0.0.1
+
+# Authentication
+UsePAM yes
+AllowUsers pi
+PermitRootLogin no
+AuthorizedKeysFile .ssh/authorized_keys
+ChallengeResponseAuthentication no
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# Forwarding
+X11Forwarding yes
+AllowAgentForwarding yes
+AllowTcpForwarding yes
+AllowStreamLocalForwarding yes
+GatewayPorts yes
+PermitTunnel yes" | sudo tee $LOCAL_SSH_SERVER_CONFIG_FILE
+
+    sudo systemctl restart ssh
+    sudo systemctl enable ssh
+}
+
+setup_reverse_ssh() {
+  REVERSE_SSH_SERVICE_FILE=/etc/systemd/system/autossh-tunnel.service
+  USER_SSH_FOLDER_PATH=$HOME/.ssh
+  REVERSE_SSH_AUTHORIZED_KEYS_FILE=$USER_SSH_FOLDER_PATH/authorized_keys
+
+echo "[Unit]
+Description=AutoSSH tunnel service
+After=network.target
+
+[Service]
+Environment=\"AUTOSSH_GATETIME=0\"
+ExecStart=/usr/bin/autossh  -M 0 \
+                            -o \"ServerAliveInterval=30\" \
+                            -o \"ServerAliveCountMax=3\" \
+                            -o \"PubkeyAuthentication=yes\" \
+                            -o \"PasswordAuthentication=no\" \
+                            -o \"ExitOnForwardFailure=yes\" \
+                            -o \"StrictHostKeyChecking=no\"
+                            -i /root/.ssh/tunnelkey \
+                            -N \
+                            -T \
+                            -R $1:localhost:2222 \
+                            tunneluser@tunnel-portal.locarise.com -p 443
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target" | sudo tee $REVERSE_SSH_SERVICE_FILE
+
+  sudo systemctl daemon-reload
+  sudo systemctl restart autossh-tunnel.service
+  sudo systemctl enable autossh-tunnel.service
+
+  mkdir -p $USER_SSH_FOLDER_PATH
+  chmod 0700 $USER_SSH_FOLDER_PATH
+
+cat > $REVERSE_SSH_AUTHORIZED_KEYS_FILE <<EOF
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCYFp3KL50gLrB56JAzSO23lnQKCwpn2Tw5OciDfe+PQHOtKZz6vI98arSzEknlYEdF7Ohr7NQFg7/t2ueKXe7Vud50lI9R+pe3V4koErrIBL3Ol1RSCLD5CxZtOTM0HU4e1aPqcBlCV/tv3MpamRqukeZbtfXnDNlT4sfCTk4MgmSfHIvrFERiuolwqRo6324tHddxX6Px6BmRPAVoP6JqDYUENonsHgPAG4d7Wzm4WO9SwAhvRVkQf9o2vhObpOLKnvRDmxFp6HPtpfZiunpdse0VY2jgBjJDZ/Mw6zJ3dIXWOmlvkKdk5urq5VrRQ6J54+D6pqkBF/wgT4cjwrsNWc2xnDGKYemB6pNn0DP9JCdY3d5JZFSVZKBWmOHzyS7bYzsheiA/GtFXtYefAL449y9aavEZqvgMzrmXaMWBAtFBzJeecLlSsyLFLI+Eg9OQnezF2eameXecYihBwLZobuv0bNDssfCsiONX+P8oLdGVS0RMsf/L61LT8/frarP3X3B7JSdY6xuFJAprp75gRpGMFVkD47z+pkMZQGc4QtWr9EFeSiLz4Ha5fitPYZ4Hf8Z6D8jklgJgibqg7d6/lVpKDupVAi6sCw3VHK5FlSD97K07LW8UxgxmaMBt+ITz/qRQimm5mcaJ7EImMThgTU/rCNDOE/CQ/bOCfwquew==
+EOF
+}
+
 disable_underscan() {
   # Create a backup file before modifying
   sudo cp /boot/config.txt /boot/config.txt.bkp
@@ -140,6 +213,13 @@ if [[ $upgr == "y" ]]; then
   upgrade_system
 fi
 
+printf "ssh tunnel port:"
+read tunnelport
+if [[ -z "$tunnelport" ]]; then
+    printf "no tunnel port specified"
+    exit 1
+fi
+
 log "installing latest chromium browser and tools"
 install_essential_tools
 
@@ -148,6 +228,15 @@ install_mscore_fonts
 
 log "installing noto cjk fonts"
 install_notocjk_fonts
+
+log "installing ssh and utilities"
+install_ssh
+
+log "setting up local ssh"
+setup_local_ssh
+
+log "setting up reverse ssh"
+setup_reverse_ssh "$tunnelport"
 
 log "setting up signal kiosk mode"
 install_kiosk_script
