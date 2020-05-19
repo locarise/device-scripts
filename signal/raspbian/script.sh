@@ -143,18 +143,18 @@ After=network.target
 
 [Service]
 Environment=\"AUTOSSH_GATETIME=0\"
-ExecStart=/usr/bin/autossh  -M 0 \
-                            -o \"ServerAliveInterval=30\" \
-                            -o \"ServerAliveCountMax=3\" \
-                            -o \"PubkeyAuthentication=yes\" \
-                            -o \"PasswordAuthentication=no\" \
-                            -o \"ExitOnForwardFailure=yes\" \
-                            -o \"StrictHostKeyChecking=no\"
-                            -i /root/.ssh/tunnelkey \
-                            -N \
-                            -T \
-                            -R $1:localhost:2222 \
-                            tunneluser@tunnel-portal.locarise.com -p 443
+ExecStart=/usr/bin/autossh -M 0 \
+-o \"ServerAliveInterval=30\" \
+-o \"ServerAliveCountMax=3\" \
+-o \"PubkeyAuthentication=yes\" \
+-o \"PasswordAuthentication=no\" \
+-o \"ExitOnForwardFailure=yes\" \
+-o \"StrictHostKeyChecking=no\" \
+-i /root/.ssh/tunnelkey \
+-N \
+-T \
+-R $1:localhost:2222 \
+tunneluser@tunnel-portal.locarise.com -p 443
 Restart=always
 RestartSec=3
 
