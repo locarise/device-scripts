@@ -144,8 +144,8 @@ After=network.target
 [Service]
 Environment=\"AUTOSSH_GATETIME=0\"
 ExecStart=/usr/bin/autossh -M 0 \
--o \"ServerAliveInterval=30\" \
--o \"ServerAliveCountMax=3\" \
+-o \"ServerAliveInterval=15\" \
+-o \"ServerAliveCountMax=4\" \
 -o \"PubkeyAuthentication=yes\" \
 -o \"PasswordAuthentication=no\" \
 -o \"ExitOnForwardFailure=yes\" \
