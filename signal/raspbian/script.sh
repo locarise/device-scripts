@@ -81,7 +81,7 @@ chromium-browser \
 --disable-extensions \
 --start-fullscreen \
 --no-default-browser-check \
---disable-component-update \
+--check-for-update-interval=604800 \
 https://signal.locarise.com
 EOF
 
